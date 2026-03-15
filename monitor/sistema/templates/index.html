@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Monitor de Recursos</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+background:black;
+color:white;
+font-family:Arial;
+text-align:center;
+margin:0;
+}
+
+.logo{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+opacity:0.05;
+width:600px;
+z-index:-1;
+}
+
+h1{
+color:#00eaff;
+font-size:40px;
+margin-top:20px;
+}
+
+.dashboard{
+display:flex;
+justify-content:center;
+gap:40px;
+margin-top:40px;
+}
+
+.gauge{
+width:260px;
+height:260px;
+}
+
+.value{
+font-size:22px;
+margin-top:10px;
+}
+
+.info{
+margin-top:30px;
+font-size:18px;
+}
+
+.signature{
+position:fixed;
+bottom:15px;
+right:20px;
+color:#00eaff;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/3/39/UTH_logo.png" class="logo">
+
+<h1>MONITOR DE RECURSOS</h1>
+
+<div class="dashboard">
+
+<div>
+
+<canvas id="cpuGauge" class="gauge"></canvas>
+<div class="value">CPU <span id="cpuValue">0</span>%</div>
+
+</div>
+
+<div>
+
+<canvas id="ramGauge" class="gauge"></canvas>
+<div class="value">RAM <span id="ramValue">0</span>%</div>
+
+</div>
+
+<div>
+
+<canvas id="diskGauge" class="gauge"></canvas>
+<div class="value">DISK <span id="diskValue">0</span>%</div>
+
+</div>
+
+</div>
+
+<div class="info">
+
+<p>Procesador: {{ procesador }}</p>
+
+<p>Temperatura CPU: <span id="tempValue">39</span> °C</p>
+
+<p>Sistema: {{ sistema }} {{ version }}</p>
+
+<p>Núcleos CPU: {{ nucleos }}</p>
+
+<p>RAM Total: <span id="ramTotal"></span> GB</p>
+<p>RAM Usada: <span id="ramUsada"></span> GB</p>
+
+<p>Disco Total: <span id="diskTotal"></span> GB</p>
+<p>Disco Libre: <span id="diskLibre"></span> GB</p>
+
+</div>
+
+<div class="signature">
+
+C. Franco<br>
+201111110063
+
+</div>
+
+<script>
+
+function getColor(v){
+
+if(v < 50) return "green"
+if(v < 80) return "orange"
+return "red"
+
+}
+
+function createGauge(id){
+
+return new Chart(document.getElementById(id),{
+
+type:'doughnut',
+
+data:{
+datasets:[{
+data:[0,100],
+backgroundColor:["green","#333"],
+borderWidth:0
+}]
+},
+
+options:{
+rotation:270,
+circumference:180,
+cutout:'70%',
+plugins:{legend:{display:false}}
+}
+
+})
+
+}
+
+let cpuChart = createGauge("cpuGauge")
+let ramChart = createGauge("ramGauge")
+let diskChart = createGauge("diskGauge")
+
+function updateGauge(chart,value,label){
+
+chart.data.datasets[0].data=[value,100-value]
+chart.data.datasets[0].backgroundColor=[getColor(value),"#333"]
+chart.update()
+
+document.getElementById(label).innerText=value
+
+}
+
+function actualizar(){
+
+fetch("/api/datos/")
+
+.then(response => response.json())
+
+.then(data =>{
+
+updateGauge(cpuChart,data.cpu,"cpuValue")
+updateGauge(ramChart,data.ram_porcentaje,"ramValue")
+updateGauge(diskChart,data.disk_porcentaje,"diskValue")
+
+document.getElementById("tempValue").innerText=data.temperatura
+
+document.getElementById("ramTotal").innerText=data.ram_total
+document.getElementById("ramUsada").innerText=data.ram_usada
+
+document.getElementById("diskTotal").innerText=data.disco_total
+document.getElementById("diskLibre").innerText=data.disco_libre
+
+})
+
+}
+
+setInterval(actualizar,2000)
+
+actualizar()
+
+</script>
+
+</body>
+
+</html>
